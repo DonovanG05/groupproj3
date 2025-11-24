@@ -1,0 +1,131 @@
+// Form validation and submission handling
+(function () {
+  'use strict';
+
+  const form = document.getElementById('signupForm');
+  const studentEmailInput = document.getElementById('studentEmail');
+  const usernameInput = document.getElementById('username');
+  const passwordInput = document.getElementById('password');
+  const buildingPasswordInput = document.getElementById('buildingPassword');
+
+  // Validate student email format (must be an email ending in .edu)
+  function validateStudentEmail(email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.edu$/i;
+    return emailRegex.test(email);
+  }
+
+  // Custom validation for student email
+  studentEmailInput.addEventListener('blur', function () {
+    if (this.value && !validateStudentEmail(this.value)) {
+      this.setCustomValidity('Please enter a valid student email ending in .edu');
+      this.classList.add('is-invalid');
+    } else {
+      this.setCustomValidity('');
+      this.classList.remove('is-invalid');
+    }
+  });
+
+  studentEmailInput.addEventListener('input', function () {
+    if (this.classList.contains('is-invalid')) {
+      if (validateStudentEmail(this.value)) {
+        this.setCustomValidity('');
+        this.classList.remove('is-invalid');
+      }
+    }
+  });
+
+  // Form submission handler
+  form.addEventListener('submit', function (event) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    // Validate all fields
+    let isValid = true;
+
+    // Check student email
+    if (!validateStudentEmail(studentEmailInput.value)) {
+      studentEmailInput.setCustomValidity('Please enter a valid student email ending in .edu');
+      studentEmailInput.classList.add('is-invalid');
+      isValid = false;
+    } else {
+      studentEmailInput.setCustomValidity('');
+      studentEmailInput.classList.remove('is-invalid');
+    }
+
+    // Check username
+    if (usernameInput.value.length < 3) {
+      usernameInput.classList.add('is-invalid');
+      isValid = false;
+    } else {
+      usernameInput.classList.remove('is-invalid');
+    }
+
+    // Check password
+    if (passwordInput.value.length < 8) {
+      passwordInput.classList.add('is-invalid');
+      isValid = false;
+    } else {
+      passwordInput.classList.remove('is-invalid');
+    }
+
+    // Check building password
+    if (!buildingPasswordInput.value) {
+      buildingPasswordInput.classList.add('is-invalid');
+      isValid = false;
+    } else {
+      buildingPasswordInput.classList.remove('is-invalid');
+    }
+
+    form.classList.add('was-validated');
+
+    if (isValid) {
+      // Collect form data
+      const formData = {
+        studentEmail: studentEmailInput.value,
+        username: usernameInput.value,
+        password: passwordInput.value,
+        buildingPassword: buildingPasswordInput.value,
+      };
+
+      // Log to console (will be replaced with API call later)
+      console.log('Form data ready for submission:', {
+        studentEmail: formData.studentEmail,
+        username: formData.username,
+        password: '***hidden***',
+        buildingPassword: '***hidden***',
+      });
+
+      // TODO: Replace with actual API call to save to database
+      // Example:
+      // fetch('/api/signup', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify(formData)
+      // })
+      //   .then(response => response.json())
+      //   .then(data => {
+      //     // Handle success
+      //   })
+      //   .catch(error => {
+      //     // Handle error
+      //   });
+
+      // Show success message (temporary)
+      alert('Account created successfully! (This is a placeholder - database integration coming soon)');
+      
+      // Reset form
+      form.reset();
+      form.classList.remove('was-validated');
+    }
+  });
+
+  // Real-time validation feedback
+  [usernameInput, passwordInput, buildingPasswordInput].forEach((input) => {
+    input.addEventListener('input', function () {
+      if (this.classList.contains('is-invalid') && this.checkValidity()) {
+        this.classList.remove('is-invalid');
+      }
+    });
+  });
+})();
+
