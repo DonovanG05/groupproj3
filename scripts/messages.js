@@ -2,6 +2,10 @@
 (function () {
   'use strict';
 
+  // API configuration
+  const apiUrl = 'http://localhost:5000/api'; // Update with your API URL
+  const buildingId = localStorage.getItem('buildingId') || 1; // Default to building 1
+
   const messageForm = document.getElementById('messageForm');
   const messageInput = document.getElementById('messageInput');
   const anonymousToggle = document.getElementById('anonymousToggle');
@@ -17,43 +21,9 @@
   const currentUsername = localStorage.getItem('username') || 'User';
   document.getElementById('displayUsername').textContent = currentUsername;
 
-  // Sample messages data (will be replaced with API calls)
-  let messages = [
-    {
-      id: 1,
-      author: 'JohnDoe',
-      content: 'Welcome to the building message board! Feel free to share updates and connect with neighbors.',
-      timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
-      anonymous: false,
-      emergency: false,
-      pinned: false,
-      isAdmin: false,
-    },
-  ];
-
-  // Sample pinned messages from admins (will be replaced with API calls)
-  let pinnedMessages = [
-    {
-      id: 100,
-      author: 'Admin',
-      content: 'Important: Building maintenance scheduled for this Saturday from 9 AM to 12 PM. Please plan accordingly.',
-      timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 day ago
-      anonymous: false,
-      emergency: false,
-      pinned: true,
-      isAdmin: true,
-    },
-    {
-      id: 101,
-      author: 'Admin',
-      content: 'Welcome to the community message board! This is a space for residents to share updates, ask questions, and stay connected. Please be respectful and follow community guidelines.',
-      timestamp: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 days ago
-      anonymous: false,
-      emergency: false,
-      pinned: true,
-      isAdmin: true,
-    },
-  ];
+  // Messages data - loaded from API
+  let messages = [];
+  let pinnedMessages = [];
 
   // Format timestamp
   function formatTimestamp(date) {
@@ -145,43 +115,42 @@
 
   // Add new message
   function addMessage(content, anonymous = false, emergency = false) {
-    const newMessage = {
-      id: messages.length + 1,
-      author: currentUsername,
-      content: content.trim(),
-      timestamp: new Date(),
-      anonymous: anonymous,
-      emergency: emergency,
-      pinned: false,
-      isAdmin: false,
-    };
+    const userId = localStorage.getItem('userId');
+    if (!userId) {
+      alert('You must be logged in to post messages');
+      return;
+    }
 
-    messages.unshift(newMessage); // Add to beginning
-    renderMessages();
-
-    // TODO: Replace with API call to save message to database
-    console.log('Message to be saved:', {
-      id: newMessage.id,
-      author: newMessage.author,
-      content: newMessage.content,
-      anonymous: newMessage.anonymous,
-      emergency: newMessage.emergency,
-      timestamp: newMessage.timestamp,
-    });
-
-    // Example API call:
-    // fetch('/api/messages', {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify(newMessage)
-    // })
-    //   .then(response => response.json())
-    //   .then(data => {
-    //     // Handle success
-    //   })
-    //   .catch(error => {
-    //     // Handle error
-    //   });
+    const buildingId = localStorage.getItem('buildingId') || 1;
+    
+    // API call to save message to database
+    fetch(`${apiUrl}/messages`, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'user-id': userId
+      },
+      body: JSON.stringify({
+        buildingId: buildingId,
+        content: content.trim(),
+        isAnonymous: anonymous
+      })
+    })
+      .then(response => {
+        if (!response.ok) {
+          return response.json().then(err => Promise.reject(err));
+        }
+        return response.json();
+      })
+      .then(data => {
+        console.log('Message saved:', data);
+        // Reload messages from server
+        loadMessages();
+      })
+      .catch(error => {
+        console.error('Error saving message:', error);
+        alert('Failed to save message. Please try again.');
+      });
   }
 
   // Handle message form submission
@@ -218,38 +187,43 @@
     const emergencyType = document.getElementById('emergencyType').value;
     const location = document.getElementById('emergencyLocation').value;
     const description = document.getElementById('emergencyDescription').value;
+    const userId = localStorage.getItem('userId');
+    const buildingId = localStorage.getItem('buildingId') || 1;
 
-    const emergencyMessage = `[EMERGENCY: ${emergencyType.toUpperCase()}] Location: ${location}\n\n${description}`;
+    if (!userId) {
+      alert('You must be logged in to report emergencies');
+      return;
+    }
 
-    // Add as emergency message (not anonymous for emergencies)
-    addMessage(emergencyMessage, false, true);
-
-    // TODO: Replace with API call to notify administrators
-    console.log('Emergency reported:', {
-      type: emergencyType,
-      location: location,
-      description: description,
-      timestamp: new Date(),
-    });
-
-    // Example API call:
-    // fetch('/api/emergency', {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify({
-    //     type: emergencyType,
-    //     location: location,
-    //     description: description,
-    //     timestamp: new Date()
-    //   })
-    // })
-    //   .then(response => response.json())
-    //   .then(data => {
-    //     // Handle success
-    //   })
-    //   .catch(error => {
-    //     // Handle error
-    //   });
+    // API call to report emergency
+    fetch(`${apiUrl}/emergencies`, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'user-id': userId
+      },
+      body: JSON.stringify({
+        buildingId: buildingId,
+        emergencyType: emergencyType,
+        location: location,
+        description: description,
+        userId: userId
+      })
+    })
+      .then(response => {
+        if (!response.ok) {
+          return response.json().then(err => Promise.reject(err));
+        }
+        return response.json();
+      })
+      .then(data => {
+        console.log('Emergency reported:', data);
+        alert('Emergency reported! Building administrators have been notified.');
+      })
+      .catch(error => {
+        console.error('Error reporting emergency:', error);
+        alert('Failed to report emergency. Please try again or call 911.');
+      });
 
     // Close modal and reset form
     emergencyModal.hide();
@@ -259,23 +233,61 @@
     alert('Emergency reported! Building administrators have been notified.');
   });
 
-  // Load messages on page load
-  // TODO: Replace with API call to fetch messages
-  // fetch('/api/messages')
-  //   .then(response => response.json())
-  //   .then(data => {
-  //     // Separate pinned and regular messages
-  //     pinnedMessages = data.filter(msg => msg.pinned);
-  //     messages = data.filter(msg => !msg.pinned);
-  //     renderPinnedMessages();
-  //     renderMessages();
-  //   })
-  //   .catch(error => {
-  //     console.error('Error loading messages:', error);
-  //   });
+  // Load messages from API
+  function loadMessages() {
+    Promise.all([
+      fetch(`${apiUrl}/messages?buildingId=${buildingId}`).then(r => {
+        if (!r.ok) throw new Error('Failed to load messages');
+        return r.json();
+      }),
+      fetch(`${apiUrl}/messages/pinned?buildingId=${buildingId}`).then(r => {
+        if (!r.ok) throw new Error('Failed to load pinned messages');
+        return r.json();
+      })
+    ])
+      .then(([messagesData, pinnedData]) => {
+        // Transform API response to match expected format
+        messages = messagesData.map(msg => ({
+          id: msg.message_id,
+          author: msg.is_anonymous ? 'Anonymous' : msg.author,
+          content: msg.content, // TODO: Decrypt if encrypted
+          timestamp: new Date(msg.created_at),
+          anonymous: msg.is_anonymous,
+          emergency: false,
+          pinned: false,
+          isAdmin: msg.author_role === 'admin' || msg.author_role === 'RA'
+        }));
+        
+        pinnedMessages = pinnedData.map(msg => ({
+          id: msg.pinned_message_id,
+          author: msg.author,
+          content: msg.content, // TODO: Decrypt if encrypted
+          timestamp: new Date(msg.created_at),
+          anonymous: false,
+          emergency: false,
+          pinned: true,
+          isAdmin: true
+        }));
+        
+        renderPinnedMessages();
+        renderMessages();
+        
+        // Load building info if available
+        if (messagesData.length > 0 || pinnedData.length > 0) {
+          // Building name could come from API response or we can fetch it separately
+          // For now, we'll try to get it from localStorage or leave as "Loading..."
+        }
+      })
+      .catch(error => {
+        console.error('Error loading messages:', error);
+        messages = [];
+        pinnedMessages = [];
+        renderPinnedMessages();
+        renderMessages();
+      });
+  }
 
-  // Initial render
-  renderPinnedMessages();
-  renderMessages();
+  // Load messages on page load
+  loadMessages();
 })();
 

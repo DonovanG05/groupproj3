@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>RA Dashboard - Emergency Management</title>
+
+    <!-- Bootstrap CSS -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+      crossorigin="anonymous"
+    />
+
+    <!-- Bootstrap Icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+    />
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="./styles/main.css" />
+    <link rel="stylesheet" href="./styles/admin-dashboard.css" />
+  </head>
+  <body>
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="#">
+          <i class="bi bi-shield-check"></i> RA Dashboard
+        </a>
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarNav"
+          aria-controls="navbarNav"
+          aria-expanded="false"
+          aria-label="Toggle navigation"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav ms-auto">
+            <li class="nav-item">
+              <a class="nav-link" href="messages.html">
+                <i class="bi bi-chat-dots"></i> Messages
+              </a>
+            </li>
+            <li class="nav-item">
+              <span class="navbar-text text-white me-3">
+                <i class="bi bi-person-circle"></i> <span id="displayUsername">RA</span>
+                <span class="badge bg-info ms-2" id="userRoleBadge">RA</span>
+              </span>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="home.html">
+                <i class="bi bi-box-arrow-right"></i> Logout
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <div class="container-fluid py-4">
+      <div class="row">
+        <!-- Main Content -->
+        <div class="col-12">
+          <!-- Page Header -->
+          <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+              <h2 class="mb-1">
+                <i class="bi bi-exclamation-triangle-fill text-danger"></i> Emergency Management
+              </h2>
+              <p class="text-muted mb-0">Monitor and verify emergency reports for your building</p>
+            </div>
+            <div>
+              <button class="btn btn-outline-primary" id="refreshBtn">
+                <i class="bi bi-arrow-clockwise"></i> Refresh
+              </button>
+            </div>
+          </div>
+
+          <!-- Building Info Card -->
+          <div class="card shadow-sm mb-4">
+            <div class="card-body">
+              <div class="row">
+                <div class="col-md-6">
+                  <h6 class="text-muted mb-1">Your Building</h6>
+                  <p class="mb-0">
+                    <i class="bi bi-building"></i> <strong id="raBuildingName">Loading...</strong>
+                  </p>
+                </div>
+                <div class="col-md-6">
+                  <h6 class="text-muted mb-1">Unverified Emergencies</h6>
+                  <p class="mb-0">
+                    <span class="badge bg-danger fs-6" id="unverifiedCountBadge">0</span>
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Filter Tabs -->
+          <ul class="nav nav-tabs mb-4" id="filterTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button
+                class="nav-link active"
+                id="unverified-tab"
+                data-bs-toggle="tab"
+                data-bs-target="#unverified"
+                type="button"
+                role="tab"
+              >
+                <i class="bi bi-exclamation-circle"></i> Unverified
+                <span class="badge bg-danger ms-2" id="unverifiedCount">0</span>
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button
+                class="nav-link"
+                id="verified-tab"
+                data-bs-toggle="tab"
+                data-bs-target="#verified"
+                type="button"
+                role="tab"
+              >
+                <i class="bi bi-check-circle"></i> Verified
+                <span class="badge bg-success ms-2" id="verifiedCount">0</span>
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button
+                class="nav-link"
+                id="all-tab"
+                data-bs-toggle="tab"
+                data-bs-target="#all"
+                type="button"
+                role="tab"
+              >
+                <i class="bi bi-list-ul"></i> All
+                <span class="badge bg-secondary ms-2" id="allCount">0</span>
+              </button>
+            </li>
+          </ul>
+
+          <!-- Tab Content -->
+          <div class="tab-content" id="filterTabContent">
+            <!-- Unverified Emergencies -->
+            <div class="tab-pane fade show active" id="unverified" role="tabpanel">
+              <div class="alert alert-warning">
+                <i class="bi bi-info-circle"></i>
+                <strong>Action Required:</strong> Review and verify these emergency reports for your building.
+              </div>
+              <div id="unverifiedEmergenciesContainer" class="emergencies-container">
+                <!-- Unverified emergency messages will be populated dynamically -->
+              </div>
+            </div>
+
+            <!-- Verified Emergencies -->
+            <div class="tab-pane fade" id="verified" role="tabpanel">
+              <div id="verifiedEmergenciesContainer" class="emergencies-container">
+                <!-- Verified emergency messages will be populated dynamically -->
+              </div>
+            </div>
+
+            <!-- All Emergencies -->
+            <div class="tab-pane fade" id="all" role="tabpanel">
+              <div id="allEmergenciesContainer" class="emergencies-container">
+                <!-- All emergency messages will be populated dynamically -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Verify Emergency Modal -->
+    <div
+      class="modal fade"
+      id="verifyModal"
+      tabindex="-1"
+      aria-labelledby="verifyModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header bg-success text-white">
+            <h5 class="modal-title" id="verifyModalLabel">
+              <i class="bi bi-check-circle"></i> Verify Emergency
+            </h5>
+            <button
+              type="button"
+              class="btn-close btn-close-white"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <form id="verifyForm">
+              <input type="hidden" id="verifyEmergencyId" />
+              
+              <div class="alert alert-info mb-3">
+                <i class="bi bi-info-circle"></i>
+                <strong>Emergency Details:</strong>
+                <div id="verifyEmergencyDetails" class="mt-2"></div>
+              </div>
+
+              <div class="mb-3">
+                <label for="verificationNotes" class="form-label">Verification Notes (Optional)</label>
+                <textarea
+                  class="form-control"
+                  id="verificationNotes"
+                  rows="3"
+                  placeholder="Add any notes about the verification..."
+                ></textarea>
+                <div class="form-text">
+                  These notes will be recorded in the verification history.
+                </div>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              Cancel
+            </button>
+            <button type="button" class="btn btn-success" id="confirmVerifyBtn">
+              <i class="bi bi-check-circle"></i> Verify Emergency
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Emergency Details Modal -->
+    <div
+      class="modal fade"
+      id="detailsModal"
+      tabindex="-1"
+      aria-labelledby="detailsModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header bg-primary text-white">
+            <h5 class="modal-title" id="detailsModalLabel">
+              <i class="bi bi-info-circle"></i> Emergency Details
+            </h5>
+            <button
+              type="button"
+              class="btn-close btn-close-white"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div class="modal-body" id="detailsModalBody">
+            <!-- Emergency details will be populated dynamically -->
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              Close
+            </button>
+            <button type="button" class="btn btn-success" id="verifyFromDetailsBtn" style="display: none;">
+              <i class="bi bi-check-circle"></i> Verify Emergency
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bootstrap JS bundle -->
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+      crossorigin="anonymous"
+    ></script>
+
+    <!-- Custom JS -->
+    <script src="./scripts/ra-dashboard.js"></script>
+  </body>
+</html>
+

@@ -1,50 +1,68 @@
 # Database Schema Documentation
 
 ## Overview
-This database schema is designed for a Community Message Board system using JawsDB (MySQL compatible). The system supports three user roles: Students, Resident Assistants (RAs), and Admins.
+This database schema is designed for a Community Message Board system using JawsDB (MySQL compatible). The system uses separate tables for different user roles: Students, Resident Assistants (RAs), and Admins.
 
 ## Database Structure
 
-### Tables
+### Core Tables
 
 #### 1. `buildings`
 Stores information about different buildings/residence halls, each with its own message board.
 - `building_id`: Primary key
 - `building_name`: Unique name of the building
-- `building_password`: Password required to join the building's message board
+- `building_password`: Password required to join the building's message board (should be hashed)
 - `description`: Optional description of the building
 
 #### 2. `users`
-Stores all user accounts (students, RAs, and admins).
+Base table storing common information for all user types (students, RAs, and admins).
 - `user_id`: Primary key
 - `username`: Unique username
 - `student_email`: Unique student email (must end in .edu)
 - `password_hash`: Hashed password (use bcrypt or similar)
-- `role`: Enum ('student', 'RA', 'admin')
 - `last_login`: Timestamp of last login
 
-#### 3. `user_buildings`
+#### 3. `students`
+Stores student-specific information.
+- `student_id`: Primary key
+- `user_id`: Foreign key to users table
+- `room_number`: Student's room number (optional)
+- `floor_number`: Student's floor number (optional)
+
+#### 4. `ras`
+Stores Resident Assistant-specific information.
+- `ra_id`: Primary key
+- `user_id`: Foreign key to users table
+- `building_id`: Foreign key to buildings table (which building they oversee)
+- `phone_number`: RA's contact phone number (optional)
+- `office_location`: RA's office location (optional)
+
+#### 5. `admins`
+Stores administrator-specific information.
+- `admin_id`: Primary key
+- `user_id`: Foreign key to users table
+- `admin_level`: Enum ('super_admin', 'admin', 'moderator') - permission level
+- `phone_number`: Admin's contact phone number (optional)
+
+### Relationship Tables
+
+#### 6. `user_buildings`
 Junction table linking users to buildings they belong to.
-- Links users to their respective building message boards
-- Students and RAs are linked to specific buildings
+- Links students to their residence hall buildings
+- RAs are linked via the `ras` table's `building_id` field
 - Admins can access all buildings (handled in application logic)
 
-#### 4. `messages`
+### Content Tables
+
+#### 7. `messages`
 Regular messages posted by users on building message boards.
 - `message_id`: Primary key
-- `user_id`: Foreign key to users
+- `user_id`: Foreign key to users (who posted)
 - `building_id`: Foreign key to buildings
 - `content`: Message text
 - `is_anonymous`: Boolean flag for anonymous posts
 
-#### 5. `pinned_messages`
-Announcements from RAs and admins that appear at the top of message boards.
-- `pinned_message_id`: Primary key
-- `user_id`: Foreign key to users (RA or admin)
-- `building_id`: Foreign key to buildings
-- `content`: Announcement text
-
-#### 6. `emergency_messages`
+#### 8. `emergency_messages`
 Emergency reports from users.
 - `emergency_id`: Primary key
 - `user_id`: Foreign key to users (who reported)
@@ -56,8 +74,15 @@ Emergency reports from users.
 - `verified_by`: Foreign key to users (RA or admin who verified)
 - `verified_at`: Timestamp of verification
 
-#### 7. `emergency_verifications`
-Tracks verification history for emergency messages.
+#### 9. `pinned_messages`
+Announcements from RAs and admins that appear at the top of message boards.
+- `pinned_message_id`: Primary key
+- `user_id`: Foreign key to users (RA or admin who posted)
+- `building_id`: Foreign key to buildings
+- `content`: Announcement text
+
+#### 10. `emergency_verifications`
+Tracks verification history for emergency messages (optional audit trail).
 - `verification_id`: Primary key
 - `emergency_id`: Foreign key to emergency_messages
 - `verified_by`: Foreign key to users (RA or admin)
@@ -75,9 +100,10 @@ Tracks verification history for emergency messages.
 
 ### Resident Assistants (RAs)
 - All student permissions, plus:
-- Can post pinned messages (announcements) to their building
-- Can verify emergency messages in their building
-- Can see unverified emergencies in their building
+- Can post pinned messages (announcements) to their assigned building
+- Can verify emergency messages in their assigned building
+- Can see unverified emergencies in their assigned building
+- Assigned to one building via `ras.building_id`
 
 ### Admins
 - All RA permissions, plus:
@@ -85,6 +111,10 @@ Tracks verification history for emergency messages.
 - Can post pinned messages to any building
 - Can verify emergency messages in any building
 - Can see all messages and emergencies across all buildings
+- Admin levels:
+  - `super_admin`: Full system access
+  - `admin`: Standard admin access
+  - `moderator`: Limited admin access
 
 ## Setup Instructions
 
@@ -120,12 +150,13 @@ Tracks verification history for emergency messages.
 
 4. **Email Validation**: Enforce .edu domain validation in application code.
 
-5. **Role-Based Access**: Implement role-based access control in your application logic.
+5. **Role-Based Access**: Check user role by querying the appropriate table (students, ras, or admins) based on user_id.
 
 ## Common Queries
 
 See `queries.sql` for ready-to-use SQL queries for:
 - User authentication
+- Role determination
 - Message retrieval
 - Emergency handling
 - Admin operations
@@ -138,4 +169,3 @@ See `queries.sql` for ready-to-use SQL queries for:
 3. Create API endpoints using the queries in `queries.sql`
 4. Implement role-based access control middleware
 5. Add proper error handling and validation
-

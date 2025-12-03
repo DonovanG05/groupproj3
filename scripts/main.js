@@ -95,23 +95,37 @@
         buildingPassword: '***hidden***',
       });
 
-      // TODO: Replace with actual API call to save to database
-      // Example:
-      // fetch('/api/signup', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(formData)
-      // })
-      //   .then(response => response.json())
-      //   .then(data => {
-      //     // Handle success
-      //   })
-      //   .catch(error => {
-      //     // Handle error
-      //   });
-
-      // Show success message (temporary)
-      alert('Account created successfully! (This is a placeholder - database integration coming soon)');
+      // API call to save to database
+      const apiUrl = 'http://localhost:5000/api/auth/signup'; // Update with your API URL
+      
+      fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      })
+        .then(response => {
+          if (!response.ok) {
+            return response.json().then(err => Promise.reject(err));
+          }
+          return response.json();
+        })
+        .then(data => {
+          // Handle success
+          alert('Account created successfully!');
+          // Store user info if returned
+          if (data.userId) {
+            localStorage.setItem('userId', data.userId);
+            localStorage.setItem('username', data.username);
+            localStorage.setItem('role', data.role);
+          }
+          // Redirect to messages page
+          window.location.href = 'messages.html';
+        })
+        .catch(error => {
+          // Handle error
+          console.error('Signup error:', error);
+          alert(error.message || 'Failed to create account. Please try again.');
+        });
       
       // Reset form
       form.reset();
