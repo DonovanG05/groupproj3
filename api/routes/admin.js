@@ -45,16 +45,6 @@ router.post('/create-ra', async (req, res) => {
       return res.status(400).json({ error: 'Invalid building ID' });
     }
 
-    // Check if building already has an RA
-    const [existingRAs] = await pool.execute(
-      'SELECT ra_id FROM ras WHERE building_id = ?',
-      [buildingId]
-    );
-
-    if (existingRAs.length > 0) {
-      return res.status(400).json({ error: 'This building already has an RA assigned' });
-    }
-
     // Hash password
     const passwordHash = await bcrypt.hash(password, 10);
 
