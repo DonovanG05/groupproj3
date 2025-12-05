@@ -60,6 +60,29 @@ router.post('/signup', async (req, res) => {
 
     const buildingId = inviteCodeData.building_id;
 
+    // Validate building exists
+    if (!buildingId) {
+      console.error('Invite code missing building_id:', inviteCode);
+      return res.status(400).json({ error: 'Invite code is invalid (missing building assignment)' });
+    }
+
+    // Verify building exists in database
+    const [buildings] = await pool.execute(
+      'SELECT building_id, building_name FROM buildings WHERE building_id = ?',
+      [buildingId]
+    );
+
+    if (buildings.length === 0) {
+      console.error('Invite code references non-existent building:', buildingId);
+      return res.status(400).json({ error: 'Invite code is invalid (building not found)' });
+    }
+
+    console.log('Signup: Assigning user to building', {
+      buildingId: buildingId,
+      buildingName: buildings[0].building_name,
+      inviteCode: inviteCode
+    });
+
     // Hash user password
     const passwordHash = await bcrypt.hash(password, 10);
 
@@ -83,10 +106,16 @@ router.post('/signup', async (req, res) => {
       );
 
       // Link student to building
-      await connection.execute(
+      const [userBuildingResult] = await connection.execute(
         'INSERT INTO user_buildings (user_id, building_id) VALUES (?, ?)',
         [userId, buildingId]
       );
+
+      console.log('Signup: Student linked to building', {
+        userId: userId,
+        buildingId: buildingId,
+        userBuildingId: userBuildingResult.insertId
+      });
 
       // Mark invite code as used if applicable
       if (inviteCode) {

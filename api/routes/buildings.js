@@ -26,14 +26,14 @@ router.get('/', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const userRole = req.headers['user-role'];
-    const { buildingName, buildingPassword, description } = req.body;
+    const { buildingName, description } = req.body;
 
     if (userRole !== 'admin') {
       return res.status(403).json({ error: 'Only admins can create buildings' });
     }
 
-    if (!buildingName || !buildingPassword) {
-      return res.status(400).json({ error: 'Building name and password are required' });
+    if (!buildingName) {
+      return res.status(400).json({ error: 'Building name is required' });
     }
 
     // Check if building name already exists
@@ -46,11 +46,10 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'Building name already exists' });
     }
 
-    // TODO: Hash building password before storing (for now storing as plain text for simplicity)
-    // In production, hash the building password using bcrypt
+    // Insert building without password (using empty string as placeholder since column is NOT NULL)
     const [result] = await pool.execute(
       'INSERT INTO buildings (building_name, building_password, description) VALUES (?, ?, ?)',
-      [buildingName, buildingPassword, description || null]
+      [buildingName, '', description || null]
     );
 
     res.json({

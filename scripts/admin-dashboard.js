@@ -42,8 +42,6 @@
   const confirmCreateBuildingBtn = document.getElementById('confirmCreateBuildingBtn');
   const createBuildingError = document.getElementById('createBuildingError');
   const createBuildingErrorMessage = document.getElementById('createBuildingErrorMessage');
-  const generateBuildingPasswordBtn = document.getElementById('generateBuildingPasswordBtn');
-  const buildingPasswordInput = document.getElementById('buildingPassword');
   const createRABtn = document.getElementById('createRABtn');
   const createRAModal = new bootstrap.Modal(document.getElementById('createRAModal'));
   const createRAForm = document.getElementById('createRAForm');
@@ -428,57 +426,12 @@
     createBuildingForm.reset();
     createBuildingForm.classList.remove('was-validated');
     createBuildingError.classList.add('d-none');
-    buildingPasswordInput.type = 'text'; // Show password field as text
-    // Reset password field helper text
-    const formText = buildingPasswordInput.parentElement.nextElementSibling;
-    if (formText) {
-      formText.innerHTML = `
-        <i class="bi bi-info-circle"></i> This password will be used by students to join the building. Click "Generate" for a secure random password.
-      `;
-    }
     createBuildingModal.show();
-  });
-
-  // Generate building password button
-  generateBuildingPasswordBtn.addEventListener('click', function() {
-    const generatedPassword = generateRandomPassword(10); // Shorter password for building
-    buildingPasswordInput.value = generatedPassword;
-    buildingPasswordInput.type = 'text';
-    buildingPasswordInput.classList.remove('is-invalid');
-    
-    // Show success message
-    const formText = buildingPasswordInput.parentElement.nextElementSibling;
-    if (formText) {
-      formText.innerHTML = `
-        <i class="bi bi-check-circle text-success"></i> 
-        <strong>Password generated!</strong> Make sure to copy this password to share with students.
-        <button class="btn btn-sm btn-outline-primary ms-2" type="button" id="copyBuildingPasswordBtn">
-          <i class="bi bi-clipboard"></i> Copy
-        </button>
-      `;
-      
-      // Add copy button functionality
-      const copyBtn = document.getElementById('copyBuildingPasswordBtn');
-      if (copyBtn) {
-        copyBtn.addEventListener('click', function() {
-          navigator.clipboard.writeText(generatedPassword).then(() => {
-            copyBtn.innerHTML = '<i class="bi bi-check"></i> Copied!';
-            setTimeout(() => {
-              copyBtn.innerHTML = '<i class="bi bi-clipboard"></i> Copy';
-            }, 2000);
-          }).catch(err => {
-            console.error('Failed to copy:', err);
-            alert('Failed to copy password. Please copy manually: ' + generatedPassword);
-          });
-        });
-      }
-    }
   });
 
   // Create building form submission
   confirmCreateBuildingBtn.addEventListener('click', async function() {
     const buildingName = document.getElementById('buildingName').value.trim();
-    const buildingPassword = buildingPasswordInput.value;
     const buildingDescription = document.getElementById('buildingDescription').value.trim();
 
     // Validate form
@@ -489,13 +442,6 @@
       isValid = false;
     } else {
       document.getElementById('buildingName').classList.remove('is-invalid');
-    }
-
-    if (buildingPassword.length < 6) {
-      buildingPasswordInput.classList.add('is-invalid');
-      isValid = false;
-    } else {
-      buildingPasswordInput.classList.remove('is-invalid');
     }
 
     createBuildingForm.classList.add('was-validated');
@@ -518,7 +464,6 @@
         },
         body: JSON.stringify({
           buildingName: buildingName,
-          buildingPassword: buildingPassword,
           description: buildingDescription || null
         })
       });

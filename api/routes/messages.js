@@ -12,10 +12,38 @@ function hashContent(content) {
 router.get('/', async (req, res) => {
   try {
     const buildingId = req.query.buildingId;
+    const userId = req.headers['user-id'];
+    const userRole = req.headers['user-role'];
 
     if (!buildingId) {
       return res.status(400).json({ error: 'buildingId is required' });
     }
+
+    // For students, verify they have access to this building
+    if (userRole === 'student' && userId) {
+      const [userBuildings] = await pool.execute(
+        'SELECT building_id FROM user_buildings WHERE user_id = ? AND building_id = ?',
+        [userId, buildingId]
+      );
+
+      if (userBuildings.length === 0) {
+        return res.status(403).json({ error: 'You do not have access to this building' });
+      }
+    }
+
+    // For RAs, verify they manage this building
+    if (userRole === 'RA' && userId) {
+      const [ras] = await pool.execute(
+        'SELECT building_id FROM ras WHERE user_id = ? AND building_id = ?',
+        [userId, buildingId]
+      );
+
+      if (ras.length === 0) {
+        return res.status(403).json({ error: 'You do not have access to this building' });
+      }
+    }
+
+    // Admins can access any building (no check needed)
 
     const [messages] = await pool.execute(
       `SELECT 
@@ -56,10 +84,37 @@ router.post('/', async (req, res) => {
   try {
     const { buildingId, content, isAnonymous } = req.body;
     const userId = req.body.userId || req.headers['user-id']; // Get from body or header
+    const userRole = req.headers['user-role'];
 
     if (!buildingId || !content || userId === undefined) {
       return res.status(400).json({ error: 'buildingId, content, and userId are required' });
     }
+
+    // For students, verify they have access to this building
+    if (userRole === 'student') {
+      const [userBuildings] = await pool.execute(
+        'SELECT building_id FROM user_buildings WHERE user_id = ? AND building_id = ?',
+        [userId, buildingId]
+      );
+
+      if (userBuildings.length === 0) {
+        return res.status(403).json({ error: 'You do not have access to this building' });
+      }
+    }
+
+    // For RAs, verify they manage this building
+    if (userRole === 'RA') {
+      const [ras] = await pool.execute(
+        'SELECT building_id FROM ras WHERE user_id = ? AND building_id = ?',
+        [userId, buildingId]
+      );
+
+      if (ras.length === 0) {
+        return res.status(403).json({ error: 'You do not have access to this building' });
+      }
+    }
+
+    // Admins can post to any building (no check needed)
 
     // Hash content for integrity verification
     const contentHash = hashContent(content);
@@ -87,10 +142,38 @@ router.post('/', async (req, res) => {
 router.get('/pinned', async (req, res) => {
   try {
     const buildingId = req.query.buildingId;
+    const userId = req.headers['user-id'];
+    const userRole = req.headers['user-role'];
 
     if (!buildingId) {
       return res.status(400).json({ error: 'buildingId is required' });
     }
+
+    // For students, verify they have access to this building
+    if (userRole === 'student' && userId) {
+      const [userBuildings] = await pool.execute(
+        'SELECT building_id FROM user_buildings WHERE user_id = ? AND building_id = ?',
+        [userId, buildingId]
+      );
+
+      if (userBuildings.length === 0) {
+        return res.status(403).json({ error: 'You do not have access to this building' });
+      }
+    }
+
+    // For RAs, verify they manage this building
+    if (userRole === 'RA' && userId) {
+      const [ras] = await pool.execute(
+        'SELECT building_id FROM ras WHERE user_id = ? AND building_id = ?',
+        [userId, buildingId]
+      );
+
+      if (ras.length === 0) {
+        return res.status(403).json({ error: 'You do not have access to this building' });
+      }
+    }
+
+    // Admins can access any building (no check needed)
 
     const [messages] = await pool.execute(
       `SELECT 

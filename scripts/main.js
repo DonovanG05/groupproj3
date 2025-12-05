@@ -116,7 +116,11 @@
           if (data.userId) {
             localStorage.setItem('userId', data.userId);
             localStorage.setItem('username', data.username);
-            localStorage.setItem('role', data.role);
+            localStorage.setItem('userRole', data.role);
+            // Store buildingId from invite code
+            if (data.buildingId) {
+              localStorage.setItem('buildingId', data.buildingId);
+            }
           }
           // Redirect to messages page
           window.location.href = 'messages.html';

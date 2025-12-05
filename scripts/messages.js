@@ -4,7 +4,14 @@
 
   // API configuration
   const apiUrl = 'http://localhost:5000/api'; // Update with your API URL
-  const buildingId = localStorage.getItem('buildingId') || 1; // Default to building 1
+  const buildingId = parseInt(localStorage.getItem('buildingId'), 10);
+
+  // Check if user has a valid building assignment
+  if (!buildingId || buildingId < 1) {
+    alert('You are not assigned to a building. Please contact an administrator.');
+    window.location.href = 'login.html';
+    return;
+  }
 
   const messageForm = document.getElementById('messageForm');
   const messageInput = document.getElementById('messageInput');
@@ -136,14 +143,21 @@
       return;
     }
 
-    const buildingId = localStorage.getItem('buildingId') || 1;
+    const buildingId = parseInt(localStorage.getItem('buildingId'), 10);
+    const userRole = localStorage.getItem('userRole');
+    
+    if (!buildingId || buildingId < 1) {
+      alert('Invalid building. Please ensure you are assigned to a building.');
+      return;
+    }
     
     // API call to save message to database
     fetch(`${apiUrl}/messages`, {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
-        'user-id': userId
+        'user-id': userId,
+        'user-role': userRole
       },
       body: JSON.stringify({
         buildingId: buildingId,
@@ -308,12 +322,25 @@
 
   // Load messages from API
   function loadMessages() {
+    const userId = localStorage.getItem('userId');
+    const userRole = localStorage.getItem('userRole');
+
     Promise.all([
-      fetch(`${apiUrl}/messages?buildingId=${buildingId}`).then(r => {
+      fetch(`${apiUrl}/messages?buildingId=${buildingId}`, {
+        headers: {
+          'user-id': userId,
+          'user-role': userRole
+        }
+      }).then(r => {
         if (!r.ok) throw new Error('Failed to load messages');
         return r.json();
       }),
-      fetch(`${apiUrl}/messages/pinned?buildingId=${buildingId}`).then(r => {
+      fetch(`${apiUrl}/messages/pinned?buildingId=${buildingId}`, {
+        headers: {
+          'user-id': userId,
+          'user-role': userRole
+        }
+      }).then(r => {
         if (!r.ok) throw new Error('Failed to load pinned messages');
         return r.json();
       })
