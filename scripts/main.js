@@ -6,7 +6,7 @@
   const studentEmailInput = document.getElementById('studentEmail');
   const usernameInput = document.getElementById('username');
   const passwordInput = document.getElementById('password');
-  const buildingPasswordInput = document.getElementById('buildingPassword');
+  const inviteCodeInput = document.getElementById('inviteCode');
 
   // Validate student email format (must be an email ending in .edu)
   function validateStudentEmail(email) {
@@ -68,12 +68,12 @@
       passwordInput.classList.remove('is-invalid');
     }
 
-    // Check building password
-    if (!buildingPasswordInput.value) {
-      buildingPasswordInput.classList.add('is-invalid');
+    // Check invite code
+    if (!inviteCodeInput.value.trim()) {
+      inviteCodeInput.classList.add('is-invalid');
       isValid = false;
     } else {
-      buildingPasswordInput.classList.remove('is-invalid');
+      inviteCodeInput.classList.remove('is-invalid');
     }
 
     form.classList.add('was-validated');
@@ -84,7 +84,7 @@
         studentEmail: studentEmailInput.value,
         username: usernameInput.value,
         password: passwordInput.value,
-        buildingPassword: buildingPasswordInput.value,
+        inviteCode: inviteCodeInput.value.trim(),
       };
 
       // Log to console (will be replaced with API call later)
@@ -92,7 +92,7 @@
         studentEmail: formData.studentEmail,
         username: formData.username,
         password: '***hidden***',
-        buildingPassword: '***hidden***',
+        inviteCode: formData.inviteCode,
       });
 
       // API call to save to database
@@ -124,7 +124,8 @@
         .catch(error => {
           // Handle error
           console.error('Signup error:', error);
-          alert(error.message || 'Failed to create account. Please try again.');
+          const errorMessage = error.error || error.message || 'Failed to create account. Please try again.';
+          alert(errorMessage);
         });
       
       // Reset form
@@ -134,7 +135,7 @@
   });
 
   // Real-time validation feedback
-  [usernameInput, passwordInput, buildingPasswordInput].forEach((input) => {
+  [usernameInput, passwordInput, inviteCodeInput].forEach((input) => {
     input.addEventListener('input', function () {
       if (this.classList.contains('is-invalid') && this.checkValidity()) {
         this.classList.remove('is-invalid');

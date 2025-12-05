@@ -5,7 +5,11 @@ DROP TABLE IF EXISTS emergency_verifications;
 DROP TABLE IF EXISTS emergency_messages;
 DROP TABLE IF EXISTS pinned_messages;
 DROP TABLE IF EXISTS messages;
+DROP TABLE IF EXISTS invite_codes;
 DROP TABLE IF EXISTS user_buildings;
+DROP TABLE IF EXISTS students;
+DROP TABLE IF EXISTS ras;
+DROP TABLE IF EXISTS admins;
 DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS buildings;
 

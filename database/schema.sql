@@ -134,11 +134,15 @@ CREATE TABLE IF NOT EXISTS pinned_messages (
     content_hash VARCHAR(255) NOT NULL COMMENT 'SHA-256 hash of content for integrity verification',
     is_encrypted TINYINT(1) DEFAULT 1 COMMENT 'Flag indicating if content is encrypted',
     encryption_key_id VARCHAR(100) NULL COMMENT 'Identifier for the encryption key used',
+    emergency_id INT NULL COMMENT 'Reference to emergency_messages if this is an emergency pinned message',
+    emergency_type ENUM('medical', 'fire', 'security', 'other') NULL COMMENT 'Type of emergency if this is an emergency pinned message',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
     FOREIGN KEY (building_id) REFERENCES buildings(building_id) ON DELETE CASCADE,
-    INDEX idx_building_created (building_id, created_at)
+    FOREIGN KEY (emergency_id) REFERENCES emergency_messages(emergency_id) ON DELETE CASCADE,
+    INDEX idx_building_created (building_id, created_at),
+    INDEX idx_emergency_id (emergency_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Emergency verifications table (optional - tracks verification history)
@@ -152,4 +156,24 @@ CREATE TABLE IF NOT EXISTS emergency_verifications (
     FOREIGN KEY (verified_by) REFERENCES users(user_id) ON DELETE CASCADE,
     UNIQUE KEY unique_emergency_verifier (emergency_id, verified_by),
     INDEX idx_verified_by (verified_by)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Invite codes table (for RAs to generate codes for students)
+CREATE TABLE IF NOT EXISTS invite_codes (
+    invite_code_id INT AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(50) NOT NULL UNIQUE COMMENT 'Unique invite code',
+    building_id INT NOT NULL,
+    created_by INT NOT NULL COMMENT 'RA who created the code',
+    used_by INT NULL COMMENT 'Student who used the code',
+    used_at DATETIME NULL COMMENT 'When the code was used',
+    expires_at DATETIME NULL COMMENT 'Optional expiration date',
+    is_active TINYINT(1) DEFAULT 1 COMMENT 'Whether the code is still active',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (building_id) REFERENCES buildings(building_id) ON DELETE CASCADE,
+    FOREIGN KEY (created_by) REFERENCES users(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (used_by) REFERENCES users(user_id) ON DELETE SET NULL,
+    INDEX idx_code (code),
+    INDEX idx_building_id (building_id),
+    INDEX idx_created_by (created_by),
+    INDEX idx_is_active (is_active)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

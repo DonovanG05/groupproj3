@@ -77,9 +77,25 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'All fields are required' });
     }
 
+    // Ensure buildingId is an integer
+    const buildingIdInt = parseInt(buildingId, 10);
+    if (isNaN(buildingIdInt) || buildingIdInt < 1) {
+      return res.status(400).json({ error: 'Invalid building ID' });
+    }
+
     // Validate emergency type
     if (!['medical', 'fire', 'security', 'other'].includes(emergencyType)) {
       return res.status(400).json({ error: 'Invalid emergency type' });
+    }
+
+    // Validate building exists
+    const [buildings] = await pool.execute(
+      'SELECT building_id FROM buildings WHERE building_id = ?',
+      [buildingIdInt]
+    );
+
+    if (buildings.length === 0) {
+      return res.status(400).json({ error: 'Invalid building ID' });
     }
 
     // Hash location and description
@@ -91,8 +107,16 @@ router.post('/', async (req, res) => {
       `INSERT INTO emergency_messages 
        (user_id, building_id, emergency_type, location, location_hash, description, description_hash, is_encrypted) 
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [userId, buildingId, emergencyType, location, locationHash, description, descriptionHash, 1]
+      [userId, buildingIdInt, emergencyType, location, locationHash, description, descriptionHash, 1]
     );
+
+    console.log('Emergency reported:', {
+      emergencyId: result.insertId,
+      buildingId: buildingIdInt,
+      emergencyType: emergencyType,
+      userId: userId,
+      location: location
+    });
 
     res.json({
       success: true,
@@ -134,6 +158,34 @@ router.post('/:id/verify', async (req, res) => {
       }
     }
 
+    // Get emergency details before updating (including building_id)
+    const [emergencies] = await pool.execute(
+      `SELECT 
+        em.emergency_id,
+        em.user_id,
+        em.building_id,
+        em.emergency_type,
+        em.location,
+        em.description,
+        em.is_verified,
+        em.created_at
+       FROM emergency_messages em
+       WHERE em.emergency_id = ?`,
+      [emergencyId]
+    );
+
+    if (emergencies.length === 0) {
+      return res.status(404).json({ error: 'Emergency not found' });
+    }
+
+    const emergency = emergencies[0];
+
+    // Ensure building_id exists
+    if (!emergency.building_id) {
+      console.error('Emergency missing building_id:', emergencyId);
+      return res.status(500).json({ error: 'Emergency is missing building information' });
+    }
+
     // Update emergency
     await pool.execute(
       'UPDATE emergency_messages SET is_verified = 1, verified_at = NOW(), verified_by = ? WHERE emergency_id = ?',
@@ -146,9 +198,41 @@ router.post('/:id/verify', async (req, res) => {
       [emergencyId, userId, verificationNotes || null]
     );
 
+    // Create pinned message from verified emergency
+    const emergencyTypeLabels = {
+      medical: 'Medical Emergency',
+      fire: 'Fire Emergency',
+      security: 'Security Emergency',
+      other: 'Emergency'
+    };
+    
+    const emergencyLabel = emergencyTypeLabels[emergency.emergency_type] || 'Emergency';
+    const pinnedContent = `🚨 ${emergencyLabel} - ${emergency.location}\n\n${emergency.description}`;
+    const contentHash = hashContent(pinnedContent);
+
+    // Log for debugging
+    console.log('Creating pinned message for emergency:', {
+      emergencyId: emergencyId,
+      buildingId: emergency.building_id,
+      emergencyType: emergency.emergency_type,
+      location: emergency.location
+    });
+
+    const [pinnedResult] = await pool.execute(
+      `INSERT INTO pinned_messages 
+       (user_id, building_id, content, content_hash, is_encrypted, emergency_id, emergency_type) 
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [userId, emergency.building_id, pinnedContent, contentHash, 1, emergencyId, emergency.emergency_type]
+    );
+
+    console.log('Pinned message created:', {
+      pinnedMessageId: pinnedResult.insertId,
+      buildingId: emergency.building_id
+    });
+
     res.json({
       success: true,
-      message: 'Emergency verified successfully'
+      message: 'Emergency verified successfully and pinned to chat'
     });
   } catch (error) {
     console.error('Verify emergency error:', error);
@@ -157,4 +241,6 @@ router.post('/:id/verify', async (req, res) => {
 });
 
 module.exports = router;
+
+
 

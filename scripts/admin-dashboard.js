@@ -36,6 +36,23 @@
   const pinMessageForm = document.getElementById('pinMessageForm');
   const pinMessageInput = document.getElementById('pinMessageInput');
   const confirmPinBtn = document.getElementById('confirmPinBtn');
+  const createBuildingBtn = document.getElementById('createBuildingBtn');
+  const createBuildingModal = new bootstrap.Modal(document.getElementById('createBuildingModal'));
+  const createBuildingForm = document.getElementById('createBuildingForm');
+  const confirmCreateBuildingBtn = document.getElementById('confirmCreateBuildingBtn');
+  const createBuildingError = document.getElementById('createBuildingError');
+  const createBuildingErrorMessage = document.getElementById('createBuildingErrorMessage');
+  const generateBuildingPasswordBtn = document.getElementById('generateBuildingPasswordBtn');
+  const buildingPasswordInput = document.getElementById('buildingPassword');
+  const createRABtn = document.getElementById('createRABtn');
+  const createRAModal = new bootstrap.Modal(document.getElementById('createRAModal'));
+  const createRAForm = document.getElementById('createRAForm');
+  const confirmCreateRABtn = document.getElementById('confirmCreateRABtn');
+  const raBuildingIdSelect = document.getElementById('raBuildingId');
+  const createRAError = document.getElementById('createRAError');
+  const createRAErrorMessage = document.getElementById('createRAErrorMessage');
+  const generatePasswordBtn = document.getElementById('generatePasswordBtn');
+  const raPasswordInput = document.getElementById('raPassword');
 
   // Data
   let buildings = [];
@@ -378,6 +395,314 @@
     } catch (error) {
       console.error('Error pinning message:', error);
       alert(`Failed to pin message: ${error.message}`);
+    }
+  });
+
+  // Create RA account button
+  createRABtn.addEventListener('click', function() {
+    // Populate building dropdown
+    raBuildingIdSelect.innerHTML = '<option value="">Select a building...</option>';
+    buildings.forEach(building => {
+      const option = document.createElement('option');
+      option.value = building.building_id;
+      option.textContent = building.building_name;
+      raBuildingIdSelect.appendChild(option);
+    });
+    
+    createRAForm.reset();
+    createRAForm.classList.remove('was-validated');
+    createRAError.classList.add('d-none');
+    raPasswordInput.type = 'text'; // Show password field as text so generated passwords are visible
+    // Reset password field helper text
+    const formText = raPasswordInput.parentElement.nextElementSibling;
+    if (formText) {
+      formText.innerHTML = `
+        <i class="bi bi-info-circle"></i> Password must be at least 8 characters. Click "Generate" for a secure random password.
+      `;
+    }
+    createRAModal.show();
+  });
+
+  // Create Building button
+  createBuildingBtn.addEventListener('click', function() {
+    createBuildingForm.reset();
+    createBuildingForm.classList.remove('was-validated');
+    createBuildingError.classList.add('d-none');
+    buildingPasswordInput.type = 'text'; // Show password field as text
+    // Reset password field helper text
+    const formText = buildingPasswordInput.parentElement.nextElementSibling;
+    if (formText) {
+      formText.innerHTML = `
+        <i class="bi bi-info-circle"></i> This password will be used by students to join the building. Click "Generate" for a secure random password.
+      `;
+    }
+    createBuildingModal.show();
+  });
+
+  // Generate building password button
+  generateBuildingPasswordBtn.addEventListener('click', function() {
+    const generatedPassword = generateRandomPassword(10); // Shorter password for building
+    buildingPasswordInput.value = generatedPassword;
+    buildingPasswordInput.type = 'text';
+    buildingPasswordInput.classList.remove('is-invalid');
+    
+    // Show success message
+    const formText = buildingPasswordInput.parentElement.nextElementSibling;
+    if (formText) {
+      formText.innerHTML = `
+        <i class="bi bi-check-circle text-success"></i> 
+        <strong>Password generated!</strong> Make sure to copy this password to share with students.
+        <button class="btn btn-sm btn-outline-primary ms-2" type="button" id="copyBuildingPasswordBtn">
+          <i class="bi bi-clipboard"></i> Copy
+        </button>
+      `;
+      
+      // Add copy button functionality
+      const copyBtn = document.getElementById('copyBuildingPasswordBtn');
+      if (copyBtn) {
+        copyBtn.addEventListener('click', function() {
+          navigator.clipboard.writeText(generatedPassword).then(() => {
+            copyBtn.innerHTML = '<i class="bi bi-check"></i> Copied!';
+            setTimeout(() => {
+              copyBtn.innerHTML = '<i class="bi bi-clipboard"></i> Copy';
+            }, 2000);
+          }).catch(err => {
+            console.error('Failed to copy:', err);
+            alert('Failed to copy password. Please copy manually: ' + generatedPassword);
+          });
+        });
+      }
+    }
+  });
+
+  // Create building form submission
+  confirmCreateBuildingBtn.addEventListener('click', async function() {
+    const buildingName = document.getElementById('buildingName').value.trim();
+    const buildingPassword = buildingPasswordInput.value;
+    const buildingDescription = document.getElementById('buildingDescription').value.trim();
+
+    // Validate form
+    let isValid = true;
+
+    if (buildingName.length < 2) {
+      document.getElementById('buildingName').classList.add('is-invalid');
+      isValid = false;
+    } else {
+      document.getElementById('buildingName').classList.remove('is-invalid');
+    }
+
+    if (buildingPassword.length < 6) {
+      buildingPasswordInput.classList.add('is-invalid');
+      isValid = false;
+    } else {
+      buildingPasswordInput.classList.remove('is-invalid');
+    }
+
+    createBuildingForm.classList.add('was-validated');
+
+    if (!isValid) {
+      return;
+    }
+
+    // Disable button and show loading
+    confirmCreateBuildingBtn.disabled = true;
+    confirmCreateBuildingBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Creating...';
+
+    try {
+      const response = await fetch(`${apiUrl}/buildings`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'user-id': userId,
+          'user-role': userRole
+        },
+        body: JSON.stringify({
+          buildingName: buildingName,
+          buildingPassword: buildingPassword,
+          description: buildingDescription || null
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to create building');
+      }
+
+      alert('Building created successfully!');
+      createBuildingModal.hide();
+      createBuildingForm.reset();
+      createBuildingForm.classList.remove('was-validated');
+      
+      // Reload buildings list
+      await loadBuildings();
+    } catch (error) {
+      console.error('Create building error:', error);
+      createBuildingErrorMessage.textContent = error.message || 'Failed to create building. Please try again.';
+      createBuildingError.classList.remove('d-none');
+    } finally {
+      confirmCreateBuildingBtn.disabled = false;
+      confirmCreateBuildingBtn.innerHTML = '<i class="bi bi-building-add"></i> Create Building';
+    }
+  });
+
+  // Generate random password
+  function generateRandomPassword(length = 12) {
+    const uppercase = 'ABCDEFGHJKLMNPQRSTUVWXYZ'; // Excluding I and O
+    const lowercase = 'abcdefghijkmnopqrstuvwxyz'; // Excluding l
+    const numbers = '23456789'; // Excluding 0 and 1
+    const symbols = '!@#$%&*';
+    
+    // Ensure at least one of each type
+    let password = '';
+    password += uppercase[Math.floor(Math.random() * uppercase.length)];
+    password += lowercase[Math.floor(Math.random() * lowercase.length)];
+    password += numbers[Math.floor(Math.random() * numbers.length)];
+    password += symbols[Math.floor(Math.random() * symbols.length)];
+    
+    // Fill the rest randomly
+    const allChars = uppercase + lowercase + numbers + symbols;
+    for (let i = password.length; i < length; i++) {
+      password += allChars[Math.floor(Math.random() * allChars.length)];
+    }
+    
+    // Shuffle the password
+    return password.split('').sort(() => Math.random() - 0.5).join('');
+  }
+
+  // Generate password button
+  generatePasswordBtn.addEventListener('click', function() {
+    const generatedPassword = generateRandomPassword(12);
+    raPasswordInput.value = generatedPassword;
+    raPasswordInput.type = 'text'; // Show the password so admin can copy it
+    raPasswordInput.classList.remove('is-invalid');
+    
+    // Show a success message
+    const formText = raPasswordInput.parentElement.nextElementSibling;
+    if (formText) {
+      formText.innerHTML = `
+        <i class="bi bi-check-circle text-success"></i> 
+        <strong>Password generated!</strong> Make sure to copy this password to share with the RA.
+        <button class="btn btn-sm btn-outline-primary ms-2" type="button" id="copyPasswordBtn">
+          <i class="bi bi-clipboard"></i> Copy
+        </button>
+      `;
+      
+      // Add copy button functionality
+      const copyBtn = document.getElementById('copyPasswordBtn');
+      if (copyBtn) {
+        copyBtn.addEventListener('click', function() {
+          navigator.clipboard.writeText(generatedPassword).then(() => {
+            copyBtn.innerHTML = '<i class="bi bi-check"></i> Copied!';
+            setTimeout(() => {
+              copyBtn.innerHTML = '<i class="bi bi-clipboard"></i> Copy';
+            }, 2000);
+          }).catch(err => {
+            console.error('Failed to copy:', err);
+            alert('Failed to copy password. Please copy manually: ' + generatedPassword);
+          });
+        });
+      }
+    }
+  });
+
+  // Validate email format
+  const raEmailInput = document.getElementById('raEmail');
+  raEmailInput.addEventListener('blur', function() {
+    if (this.value && !this.value.endsWith('.edu')) {
+      this.setCustomValidity('Email must end with .edu');
+      this.classList.add('is-invalid');
+    } else {
+      this.setCustomValidity('');
+      this.classList.remove('is-invalid');
+    }
+  });
+
+  // Create RA account form submission
+  confirmCreateRABtn.addEventListener('click', async function() {
+    const raUsername = document.getElementById('raUsername').value.trim();
+    const raEmail = document.getElementById('raEmail').value.trim();
+    const raPassword = document.getElementById('raPassword').value;
+    const raBuildingId = raBuildingIdSelect.value;
+    const raPhoneNumber = document.getElementById('raPhoneNumber').value.trim();
+    const raOfficeLocation = document.getElementById('raOfficeLocation').value.trim();
+
+    // Validate form
+    let isValid = true;
+
+    if (raUsername.length < 3) {
+      document.getElementById('raUsername').classList.add('is-invalid');
+      isValid = false;
+    } else {
+      document.getElementById('raUsername').classList.remove('is-invalid');
+    }
+
+    if (!raEmail || !raEmail.endsWith('.edu')) {
+      document.getElementById('raEmail').classList.add('is-invalid');
+      isValid = false;
+    } else {
+      document.getElementById('raEmail').classList.remove('is-invalid');
+    }
+
+    if (raPassword.length < 8) {
+      document.getElementById('raPassword').classList.add('is-invalid');
+      isValid = false;
+    } else {
+      document.getElementById('raPassword').classList.remove('is-invalid');
+    }
+
+    if (!raBuildingId) {
+      raBuildingIdSelect.classList.add('is-invalid');
+      isValid = false;
+    } else {
+      raBuildingIdSelect.classList.remove('is-invalid');
+    }
+
+    createRAForm.classList.add('was-validated');
+
+    if (!isValid) {
+      return;
+    }
+
+    // Disable button and show loading
+    confirmCreateRABtn.disabled = true;
+    confirmCreateRABtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Creating...';
+
+    try {
+      const response = await fetch(`${apiUrl}/admin/create-ra`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'user-id': userId,
+          'user-role': userRole
+        },
+        body: JSON.stringify({
+          username: raUsername,
+          studentEmail: raEmail,
+          password: raPassword,
+          buildingId: parseInt(raBuildingId),
+          phoneNumber: raPhoneNumber || null,
+          officeLocation: raOfficeLocation || null
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to create RA account');
+      }
+
+      alert('RA account created successfully!');
+      createRAModal.hide();
+      createRAForm.reset();
+      createRAForm.classList.remove('was-validated');
+    } catch (error) {
+      console.error('Create RA error:', error);
+      createRAErrorMessage.textContent = error.message || 'Failed to create RA account. Please try again.';
+      createRAError.classList.remove('d-none');
+    } finally {
+      confirmCreateRABtn.disabled = false;
+      confirmCreateRABtn.innerHTML = '<i class="bi bi-person-plus"></i> Create RA Account';
     }
   });
 

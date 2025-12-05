@@ -6,7 +6,7 @@ const bcrypt = require('bcrypt');
 // Signup
 router.post('/signup', async (req, res) => {
   try {
-    const { studentEmail, username, password, buildingPassword, roomNumber, floorNumber } = req.body;
+    const { studentEmail, username, password, inviteCode, roomNumber, floorNumber } = req.body;
 
     // Validate .edu email
     if (!studentEmail.endsWith('.edu')) {
@@ -23,18 +23,42 @@ router.post('/signup', async (req, res) => {
       return res.status(400).json({ error: 'Email or username already exists' });
     }
 
-    // Verify building password and get building_id
-    // TODO: Hash building password before comparing
-    const [buildings] = await pool.execute(
-      'SELECT building_id FROM buildings WHERE building_password = ?',
-      [buildingPassword]
-    );
-
-    if (buildings.length === 0) {
-      return res.status(400).json({ error: 'Invalid building password' });
+    // Validate invite code (required)
+    if (!inviteCode) {
+      return res.status(400).json({ error: 'Invite code is required' });
     }
 
-    const buildingId = buildings[0].building_id;
+    // Validate invite code
+    const [codes] = await pool.execute(
+      'SELECT invite_code_id, building_id, used_by, is_active, expires_at FROM invite_codes WHERE code = ?',
+      [inviteCode]
+    );
+
+    if (codes.length === 0) {
+      return res.status(400).json({ error: 'Invalid invite code' });
+    }
+
+    const inviteCodeData = codes[0];
+
+    // Check if already used
+    if (inviteCodeData.used_by) {
+      return res.status(400).json({ error: 'Invite code has already been used' });
+    }
+
+    // Check if inactive
+    if (!inviteCodeData.is_active) {
+      return res.status(400).json({ error: 'Invite code is no longer active' });
+    }
+
+    // Check if expired
+    if (inviteCodeData.expires_at) {
+      const expiresAt = new Date(inviteCodeData.expires_at);
+      if (expiresAt < new Date()) {
+        return res.status(400).json({ error: 'Invite code has expired' });
+      }
+    }
+
+    const buildingId = inviteCodeData.building_id;
 
     // Hash user password
     const passwordHash = await bcrypt.hash(password, 10);
@@ -64,6 +88,14 @@ router.post('/signup', async (req, res) => {
         [userId, buildingId]
       );
 
+      // Mark invite code as used if applicable
+      if (inviteCode) {
+        await connection.execute(
+          'UPDATE invite_codes SET used_by = ?, used_at = NOW() WHERE code = ?',
+          [userId, inviteCode]
+        );
+      }
+
       await connection.commit();
       connection.release();
 
@@ -89,12 +121,16 @@ router.post('/signup', async (req, res) => {
 // Login
 router.post('/login', async (req, res) => {
   try {
-    const { studentEmail, password } = req.body;
+    const { username, password } = req.body;
 
-    // Get user with password hash
+    if (!username || !password) {
+      return res.status(400).json({ error: 'Username and password are required' });
+    }
+
+    // Get user with password hash (can login with username or email)
     const [users] = await pool.execute(
-      'SELECT user_id, username, password_hash FROM users WHERE student_email = ?',
-      [studentEmail]
+      'SELECT user_id, username, password_hash FROM users WHERE username = ? OR student_email = ?',
+      [username, username]
     );
 
     if (users.length === 0) {
@@ -163,4 +199,5 @@ router.post('/logout', (req, res) => {
 });
 
 module.exports = router;
+
 

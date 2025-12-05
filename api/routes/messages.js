@@ -97,6 +97,8 @@ router.get('/pinned', async (req, res) => {
         pm.pinned_message_id,
         pm.content,
         pm.created_at,
+        pm.emergency_id,
+        pm.emergency_type,
         u.username AS author,
         u.user_id,
         CASE 
@@ -156,4 +158,6 @@ router.post('/pinned', async (req, res) => {
 });
 
 module.exports = router;
+
+
 

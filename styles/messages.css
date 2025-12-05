@@ -76,6 +76,16 @@ body {
   border-bottom-color: #ffe69c;
 }
 
+.message-item.emergency-pinned {
+  border-left: 4px solid #dc3545;
+  background-color: #fff5f5;
+  border-top: 2px solid #dc3545;
+}
+
+.message-item.emergency-pinned .message-header {
+  border-bottom-color: #fecaca;
+}
+
 .pinned-messages-container {
   padding: 1rem;
   background-color: #fffbf0;

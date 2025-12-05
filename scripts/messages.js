@@ -53,10 +53,24 @@
 
     pinnedMessages.forEach((message) => {
       const messageDiv = document.createElement('div');
-      messageDiv.className = 'message-item pinned';
+      const isEmergency = message.emergency;
+      messageDiv.className = `message-item pinned ${isEmergency ? 'emergency-pinned' : ''}`;
 
       const authorDisplay = message.anonymous ? 'Anonymous' : message.author;
       const adminBadge = message.isAdmin ? '<span class="admin-badge">ADMIN</span>' : '';
+      
+      // Emergency type badge
+      let emergencyBadge = '';
+      if (isEmergency && message.emergencyType) {
+        const emergencyTypeLabels = {
+          medical: 'MEDICAL EMERGENCY',
+          fire: 'FIRE EMERGENCY',
+          security: 'SECURITY EMERGENCY',
+          other: 'EMERGENCY'
+        };
+        const emergencyLabel = emergencyTypeLabels[message.emergencyType] || 'EMERGENCY';
+        emergencyBadge = `<span class="emergency-badge">${emergencyLabel}</span>`;
+      }
 
       messageDiv.innerHTML = `
         <div class="message-header">
@@ -64,6 +78,7 @@
             <i class="bi bi-pin-angle-fill text-warning"></i>
             ${escapeHtml(authorDisplay)}
             ${adminBadge}
+            ${emergencyBadge}
           </span>
           <span class="message-time">${formatTimestamp(message.timestamp)}</span>
         </div>
@@ -188,12 +203,24 @@
     const location = document.getElementById('emergencyLocation').value;
     const description = document.getElementById('emergencyDescription').value;
     const userId = localStorage.getItem('userId');
-    const buildingId = localStorage.getItem('buildingId') || 1;
+    const buildingId = parseInt(localStorage.getItem('buildingId'), 10) || 1;
 
     if (!userId) {
       alert('You must be logged in to report emergencies');
       return;
     }
+
+    if (!buildingId || buildingId < 1) {
+      alert('Invalid building. Please ensure you are assigned to a building.');
+      return;
+    }
+
+    console.log('Reporting emergency:', {
+      buildingId: buildingId,
+      emergencyType: emergencyType,
+      location: location,
+      userId: userId
+    });
 
     // API call to report emergency
     fetch(`${apiUrl}/emergencies`, {
@@ -233,6 +260,52 @@
     alert('Emergency reported! Building administrators have been notified.');
   });
 
+  // Load building info
+  async function loadBuildingInfo() {
+    try {
+      const userId = localStorage.getItem('userId');
+      const userRole = localStorage.getItem('userRole');
+
+      // Get building stats (includes building name and member count)
+      const buildingResponse = await fetch(`${apiUrl}/buildings/${buildingId}/stats`, {
+        headers: {
+          'user-id': userId,
+          'user-role': userRole
+        }
+      });
+
+      if (buildingResponse.ok) {
+        const stats = await buildingResponse.json();
+        if (stats.building_name) {
+          document.getElementById('buildingName').textContent = stats.building_name;
+        }
+        document.getElementById('memberCount').textContent = stats.memberCount || '0';
+      } else {
+        // If stats endpoint fails (e.g., student user), try to get building name from all buildings
+        if (userRole === 'admin') {
+          const buildingsResponse = await fetch(`${apiUrl}/buildings`, {
+            headers: {
+              'user-id': userId,
+              'user-role': userRole
+            }
+          });
+
+          if (buildingsResponse.ok) {
+            const buildings = await buildingsResponse.json();
+            const building = buildings.find(b => b.building_id === parseInt(buildingId));
+            if (building) {
+              document.getElementById('buildingName').textContent = building.building_name;
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error loading building info:', error);
+      document.getElementById('buildingName').textContent = 'Error';
+      document.getElementById('memberCount').textContent = '-';
+    }
+  }
+
   // Load messages from API
   function loadMessages() {
     Promise.all([
@@ -264,19 +337,14 @@
           content: msg.content, // TODO: Decrypt if encrypted
           timestamp: new Date(msg.created_at),
           anonymous: false,
-          emergency: false,
+          emergency: msg.emergency_id !== null && msg.emergency_id !== undefined,
+          emergencyType: msg.emergency_type || null,
           pinned: true,
-          isAdmin: true
+          isAdmin: msg.author_role === 'admin' || msg.author_role === 'RA'
         }));
         
         renderPinnedMessages();
         renderMessages();
-        
-        // Load building info if available
-        if (messagesData.length > 0 || pinnedData.length > 0) {
-          // Building name could come from API response or we can fetch it separately
-          // For now, we'll try to get it from localStorage or leave as "Loading..."
-        }
       })
       .catch(error => {
         console.error('Error loading messages:', error);
@@ -288,6 +356,8 @@
   }
 
   // Load messages on page load
+  // Load building info and messages on page load
+  loadBuildingInfo();
   loadMessages();
 })();
 

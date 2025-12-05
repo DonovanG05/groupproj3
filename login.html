@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Community Message Board - Sign Up</title>
+    <title>Community Message Board - Sign In</title>
 
     <!-- Bootstrap CSS -->
     <link
@@ -31,47 +31,29 @@
               <div class="text-center mb-4">
                 <i class="bi bi-chat-dots-fill text-primary" style="font-size: 3rem"></i>
                 <h2 class="mt-3 mb-1">Community Message Board</h2>
-                <p class="text-muted">Create your account</p>
+                <p class="text-muted">Sign in to your account</p>
               </div>
 
-              <form id="signupForm" novalidate>
-                <!-- Student Email -->
-                <div class="mb-3">
-                  <label for="studentEmail" class="form-label">
-                    <i class="bi bi-envelope"></i> Student Email
-                  </label>
-                  <input
-                    type="email"
-                    class="form-control"
-                    id="studentEmail"
-                    placeholder="student@school.edu"
-                    required
-                  />
-                  <div class="invalid-feedback">
-                    Please enter a valid student email address.
-                  </div>
-                </div>
-
-                <!-- Username -->
+              <form id="loginForm" novalidate>
+                <!-- Username or Email -->
                 <div class="mb-3">
                   <label for="username" class="form-label">
-                    <i class="bi bi-person"></i> Username
+                    <i class="bi bi-person"></i> Username or Email
                   </label>
                   <input
                     type="text"
                     class="form-control"
                     id="username"
-                    placeholder="Choose a username"
+                    placeholder="Enter your username or email"
                     required
-                    minlength="3"
                   />
                   <div class="invalid-feedback">
-                    Username must be at least 3 characters long.
+                    Please enter your username or email.
                   </div>
                 </div>
 
                 <!-- Password -->
-                <div class="mb-3">
+                <div class="mb-4">
                   <label for="password" class="form-label">
                     <i class="bi bi-lock"></i> Password
                   </label>
@@ -79,45 +61,30 @@
                     type="password"
                     class="form-control"
                     id="password"
-                    placeholder="Create a password"
+                    placeholder="Enter your password"
                     required
-                    minlength="8"
                   />
                   <div class="invalid-feedback">
-                    Password must be at least 8 characters long.
+                    Please enter your password.
                   </div>
                 </div>
 
-                <!-- Invite Code -->
-                <div class="mb-4">
-                  <label for="inviteCode" class="form-label">
-                    <i class="bi bi-ticket"></i> Invite Code
-                  </label>
-                  <input
-                    type="text"
-                    class="form-control"
-                    id="inviteCode"
-                    placeholder="Enter your invite code"
-                    required
-                  />
-                  <div class="form-text">
-                    Enter the invite code provided by your RA or building administrator.
-                  </div>
-                  <div class="invalid-feedback">
-                    Please enter a valid invite code.
-                  </div>
+                <!-- Error Alert -->
+                <div id="loginError" class="alert alert-danger d-none" role="alert">
+                  <i class="bi bi-exclamation-triangle"></i>
+                  <span id="errorMessage"></span>
                 </div>
 
                 <!-- Submit Button -->
                 <button type="submit" class="btn btn-primary w-100 mb-3">
-                  <i class="bi bi-person-plus"></i> Create Account
+                  <i class="bi bi-box-arrow-in-right"></i> Sign In
                 </button>
 
-                <!-- Login Link -->
+                <!-- Sign Up Link -->
                 <div class="text-center">
                   <small class="text-muted">
-                    Already have an account?
-                    <a href="login.html" class="text-decoration-none">Sign in</a>
+                    Don't have an account?
+                    <a href="home.html" class="text-decoration-none">Sign up</a>
                   </small>
                 </div>
               </form>
@@ -135,7 +102,7 @@
     ></script>
 
     <!-- Custom JS -->
-    <script src="./scripts/main.js"></script>
+    <script src="./scripts/login.js"></script>
   </body>
 </html>
 
