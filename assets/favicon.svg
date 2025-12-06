@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <defs>
+    <linearGradient id="crimsonGradFav" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#9E1B32;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#7A1526;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <circle cx="100" cy="100" r="95" fill="url(#crimsonGradFav)"/>
+  <!-- Bold letter T that fills the circle -->
+  <rect x="40" y="40" width="120" height="25" rx="3" fill="#FFFFFF"/>
+  <rect x="87.5" y="65" width="25" height="110" rx="3" fill="#FFFFFF"/>
+</svg>

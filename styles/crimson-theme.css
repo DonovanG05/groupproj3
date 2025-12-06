@@ -1,0 +1,106 @@
+/* University of Alabama Crimson Theme */
+:root {
+  --ua-crimson: #9E1B32;
+  --ua-crimson-dark: #7A1526;
+  --ua-crimson-light: #B81F3A;
+  --ua-white: #FFFFFF;
+  --ua-gray: #767676;
+}
+
+/* Primary color overrides */
+.bg-primary {
+  background-color: var(--ua-crimson) !important;
+}
+
+.btn-primary {
+  background-color: var(--ua-crimson) !important;
+  border-color: var(--ua-crimson) !important;
+}
+
+.btn-primary:hover {
+  background-color: var(--ua-crimson-dark) !important;
+  border-color: var(--ua-crimson-dark) !important;
+}
+
+.text-primary {
+  color: var(--ua-crimson) !important;
+}
+
+.border-primary {
+  border-color: var(--ua-crimson) !important;
+}
+
+/* Navbar */
+.navbar-brand {
+  color: var(--ua-white) !important;
+}
+
+.navbar-brand:hover {
+  color: var(--ua-white) !important;
+  opacity: 0.9;
+}
+
+/* Links */
+a {
+  color: var(--ua-crimson);
+}
+
+a:hover {
+  color: var(--ua-crimson-dark);
+}
+
+/* Active states */
+.list-group-item.active {
+  background-color: var(--ua-crimson) !important;
+  border-color: var(--ua-crimson) !important;
+}
+
+.nav-link.active {
+  color: var(--ua-crimson) !important;
+}
+
+/* Dark mode crimson adjustments */
+[data-bs-theme="dark"] .bg-primary {
+  background-color: var(--ua-crimson) !important;
+}
+
+[data-bs-theme="dark"] .btn-primary {
+  background-color: var(--ua-crimson) !important;
+  border-color: var(--ua-crimson) !important;
+}
+
+[data-bs-theme="dark"] .btn-primary:hover {
+  background-color: var(--ua-crimson-light) !important;
+  border-color: var(--ua-crimson-light) !important;
+}
+
+[data-bs-theme="dark"] .text-primary {
+  color: var(--ua-crimson-light) !important;
+}
+
+/* Logo styling */
+.logo {
+  height: 32px;
+  width: 32px;
+  margin-right: 8px;
+  vertical-align: middle;
+  display: inline-block;
+}
+
+.logo-large {
+  height: 80px;
+  width: 80px;
+  margin-bottom: 1rem;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.logo-navbar {
+  height: 32px;
+  width: 32px;
+  margin-right: 10px;
+  vertical-align: middle;
+  display: inline-block;
+}
+
