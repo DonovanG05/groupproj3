@@ -1,7 +1,7 @@
 {
-  "name": "community-message-board-api",
+  "name": "project-tutwiler-api",
   "version": "1.0.0",
-  "description": "API for Community Message Board - Secure messaging platform for university dorms",
+  "description": "API for Project Tutwiler - Secure messaging platform for university dorms",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
