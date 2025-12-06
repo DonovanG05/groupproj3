@@ -3,6 +3,9 @@ const router = express.Router();
 const pool = require('../config/database');
 const crypto = require('crypto');
 
+// Debug: Log when routes file is loaded
+console.log('Messages routes loaded - DELETE /pinned/:id should be available');
+
 // Helper function to hash content (SHA-256)
 function hashContent(content) {
   return crypto.createHash('sha256').update(content).digest('hex');
@@ -135,6 +138,66 @@ router.post('/', async (req, res) => {
   } catch (error) {
     console.error('Create message error:', error);
     res.status(500).json({ error: 'Failed to create message' });
+  }
+});
+
+// Delete pinned message (RA/Admin only)
+// IMPORTANT: This route must be defined BEFORE GET /pinned to ensure proper route matching
+// Express matches routes in order, and /pinned/:id could conflict with /pinned if not ordered correctly
+router.delete('/pinned/:id', async (req, res) => {
+  console.log('DELETE /pinned/:id route hit', { id: req.params.id, userId: req.headers['user-id'], userRole: req.headers['user-role'] });
+  try {
+    const pinnedMessageId = req.params.id;
+    const userId = req.headers['user-id'];
+    const userRole = req.headers['user-role'];
+
+    if (!['RA', 'admin'].includes(userRole)) {
+      return res.status(403).json({ error: 'Only RAs and admins can delete pinned messages' });
+    }
+
+    if (!pinnedMessageId) {
+      return res.status(400).json({ error: 'Pinned message ID is required' });
+    }
+
+    // Get the pinned message to check building access
+    const [pinnedMessages] = await pool.execute(
+      'SELECT building_id, user_id FROM pinned_messages WHERE pinned_message_id = ?',
+      [pinnedMessageId]
+    );
+
+    if (pinnedMessages.length === 0) {
+      return res.status(404).json({ error: 'Pinned message not found' });
+    }
+
+    const pinnedMessage = pinnedMessages[0];
+
+    // For RAs, verify they manage this building
+    if (userRole === 'RA') {
+      const [ras] = await pool.execute(
+        'SELECT building_id FROM ras WHERE user_id = ? AND building_id = ?',
+        [userId, pinnedMessage.building_id]
+      );
+
+      if (ras.length === 0) {
+        return res.status(403).json({ error: 'You can only unpin messages from your assigned building' });
+      }
+    }
+
+    // Admins can delete any pinned message
+
+    // Delete the pinned message
+    await pool.execute(
+      'DELETE FROM pinned_messages WHERE pinned_message_id = ?',
+      [pinnedMessageId]
+    );
+
+    res.json({
+      success: true,
+      message: 'Pinned message deleted successfully'
+    });
+  } catch (error) {
+    console.error('Delete pinned message error:', error);
+    res.status(500).json({ error: 'Failed to delete pinned message' });
   }
 });
 
